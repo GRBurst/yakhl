@@ -1,6 +1,6 @@
-resource "kubernetes_namespace" "pluto" {
+resource "kubernetes_namespace" "nginx" {
   metadata {
-    name = "pluto"
+    name = "nginx"
   }
 }
 
@@ -8,9 +8,9 @@ resource "kubernetes_deployment" "nginx" {
   metadata {
     name = "nginx"
     labels = {
-      instance = "pluto"
+      instance = "nginx"
     }
-    namespace = element(kubernetes_namespace.pluto.metadata, 0).name
+    namespace = element(kubernetes_namespace.nginx.metadata, 0).name
   }
 
   spec {
@@ -59,7 +59,7 @@ resource "kubernetes_deployment" "nginx" {
 resource "kubernetes_service" "nginx" {
     metadata {
         name = "nginx"
-        namespace = element(kubernetes_namespace.pluto.metadata, 0).name
+        namespace = element(kubernetes_namespace.nginx.metadata, 0).name
     }
     spec {
         selector = {
@@ -81,7 +81,7 @@ resource "kubernetes_manifest" "nginx_middleware" {
     kind       = "Middleware"
     metadata = {
       name = "nginx"
-      namespace = element(kubernetes_namespace.pluto.metadata, 0).name
+      namespace = element(kubernetes_namespace.nginx.metadata, 0).name
     }
     spec = {
       stripPrefix = {
@@ -95,35 +95,14 @@ resource "kubernetes_manifest" "nginx_middleware" {
   }
 }
 
-resource "kubernetes_ingress_v1" "default" {
-  metadata {
-    name = "default"
-    namespace = element(kubernetes_namespace.pluto.metadata, 0).name
-    annotations = {
-      "traefik.ingress.kubernetes.io/router.middlewares"      = "pluto-nginx@kubernetescrd"
-    }
-  }
-
-  spec {
-    default_backend {
-      service {
-        name = kubernetes_service.nginx.metadata.0.name
-        port {
-          number = 80
-        }
-      }
-    }
-  }
-}
-
 # Use ingress rules to route traffic to nginx
 # For clarification: It uses default traffic lb, not nginx
 resource "kubernetes_ingress_v1" "nginx" {
   metadata {
     name = "nginx"
-    namespace = element(kubernetes_namespace.pluto.metadata, 0).name
+    namespace = element(kubernetes_namespace.nginx.metadata, 0).name
     annotations = {
-      "traefik.ingress.kubernetes.io/router.middlewares"      = "pluto-nginx@kubernetescrd"
+      "traefik.ingress.kubernetes.io/router.middlewares"      = "nginx-nginx@kubernetescrd"
     }
   }
 
