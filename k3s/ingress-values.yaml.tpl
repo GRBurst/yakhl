@@ -11,4 +11,9 @@ prefixes:
   - ${prefix}
   %{~ endfor ~}
 
+stripPrefixes:
+  %{~ for prefix in strip_prefixes ~}
+  - ${prefix}
+  %{~ endfor ~}
+
 port: ${service_port}

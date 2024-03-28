@@ -146,7 +146,8 @@ resource "helm_release" "jellyfin_ingress" {
       namespace = kubernetes_namespace.jellyfin.metadata.0.name
       service_name = kubernetes_service.jellyfin_web.metadata.0.name
       service_port = kubernetes_service.jellyfin_web.spec.0.port.0.port
-      prefixes = ["/media", "/jellyfin"]
+      prefixes = ["/media", "/jellyfin", "/web"]
+      strip_prefixes = ["/media", "/jellyfin"]
       hosts = ["localhost", "localhost.localdomain"]
     })
   ]

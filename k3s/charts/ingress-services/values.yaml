@@ -8,4 +8,7 @@ prefixes:
   - /nginx
   - /webserver
 
+stripPrefixes:
+  - /webserver
+
 port: 80

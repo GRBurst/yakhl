@@ -84,6 +84,7 @@ resource "helm_release" "nginx_ingress" {
       service_name = element(kubernetes_service.nginx.metadata, 0).name
       service_port = kubernetes_service.nginx.spec.0.port.0.port
       prefixes = ["/nginx", "/webserver"]
+      strip_prefixes = ["/nginx", "/webserver"]
       hosts = ["localhost", "localhost.localdomain"]
     })
   ]
