@@ -138,69 +138,18 @@ resource "kubernetes_service" "jellyfin_web" {
   ]
 }
 
-
-resource "kubernetes_manifest" "jellyfin_middleware" {
- manifest = {
-    apiVersion = "traefik.io/v1alpha1"
-    kind       = "Middleware"
-    metadata = {
-      name = "jellyfin"
-      namespace = element(kubernetes_namespace.jellyfin.metadata, 0).name
-    }
-    spec = {
-      stripPrefix = {
-        forceSlash = false
-        prefixes = [
-          "/media",
-          "/jellyfin",
-        ]
-      }
-    }
-  }
-}
-
-resource "kubernetes_ingress_v1" "jellyfin" {
-  metadata {
-    name = "jellyfin"
-    namespace = element(kubernetes_namespace.jellyfin.metadata, 0).name
-    annotations = {
-      "traefik.ingress.kubernetes.io/router.middlewares"      = "jellyfin-jellyfin@kubernetescrd" # <middleware-namespace>-<middleware-name>@kubernetescrd
-    }
-  }
-
-  spec {
-    rule {
-      # Trailing wildcards are not supported
-      # https://github.com/kubernetes/kubernetes/issues/41881
-      # host = "media.*"
-      http {
-        path {
-          path_type = "Prefix"
-          path = "/media"
-          backend {
-            service {
-              name = kubernetes_service.jellyfin_web.metadata.0.name
-              port {
-                name = "web"
-              }
-            }
-          }
-        }
-        path {
-          path_type = "Prefix"
-          path = "/web/"
-          backend {
-            service {
-              name = kubernetes_service.jellyfin_web.metadata.0.name
-              port {
-                name = "web"
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+resource "helm_release" "jellyfin_ingress" {
+  name       = "jellyfin"
+  chart      = "./charts/ingress-services"
+  values = [
+    templatefile("${path.module}/ingress-values.yaml.tpl", {
+      namespace = kubernetes_namespace.jellyfin.metadata.0.name
+      service_name = kubernetes_service.jellyfin_web.metadata.0.name
+      service_port = kubernetes_service.jellyfin_web.spec.0.port.0.port
+      prefixes = ["/media", "/jellyfin"]
+      hosts = ["localhost", "localhost.localdomain"]
+    })
+  ]
 }
 
 # resource "kubernetes_service" "jellyfin_discovery" {

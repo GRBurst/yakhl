@@ -75,72 +75,16 @@ resource "kubernetes_service" "nginx" {
   ]
 }
 
-resource "kubernetes_manifest" "nginx_middleware" {
- manifest = {
-    apiVersion = "traefik.io/v1alpha1"
-    kind       = "Middleware"
-    metadata = {
-      name = "nginx"
+resource "helm_release" "nginx_ingress" {
+  name       = "nginx"
+  chart      = "./charts/ingress-services"
+  values = [
+    templatefile("${path.module}/ingress-values.yaml.tpl", {
       namespace = element(kubernetes_namespace.nginx.metadata, 0).name
-    }
-    spec = {
-      stripPrefix = {
-        forceSlash = false
-        prefixes = [
-          "/nginx",
-          "/web",
-        ]
-      }
-    }
-  }
-}
-
-# Use ingress rules to route traffic to nginx
-# For clarification: It uses default traffic lb, not nginx
-resource "kubernetes_ingress_v1" "nginx" {
-  metadata {
-    name = "nginx"
-    namespace = element(kubernetes_namespace.nginx.metadata, 0).name
-    annotations = {
-      "traefik.ingress.kubernetes.io/router.middlewares"      = "nginx-nginx@kubernetescrd"
-    }
-  }
-
-  spec {
-    default_backend {
-      service {
-        name = kubernetes_service.nginx.metadata.0.name
-        port {
-          number = 80
-        }
-      }
-    }
-
-    rule {
-      http {
-        path {
-          path_type = "Prefix"
-          path = "/nginx"
-          backend {
-            service {
-              name = kubernetes_service.nginx.metadata.0.name
-              port {
-                number = 80
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-# Display load balancer hostname (typically present in AWS)
-output "load_balancer_hostname" {
-  value = kubernetes_ingress_v1.nginx.status.0.load_balancer.0.ingress.0.hostname
-}
-
-# Display load balancer IP (typically present in GCP, or using Nginx ingress controller)
-output "load_balancer_ip" {
-  value = kubernetes_ingress_v1.nginx.status.0.load_balancer.0.ingress.0.ip
+      service_name = element(kubernetes_service.nginx.metadata, 0).name
+      service_port = kubernetes_service.nginx.spec.0.port.0.port
+      prefixes = ["/nginx", "/webserver"]
+      hosts = ["localhost", "localhost.localdomain"]
+    })
+  ]
 }

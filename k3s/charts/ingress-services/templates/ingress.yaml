@@ -1,0 +1,38 @@
+---
+# Middleware
+# Strip given prefixes
+apiVersion: traefik.io/v1alpha1 # traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Values.serviceName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  stripPrefix:
+    forceSlash: false
+    prefixes: 
+    {{- range $prefix := .Values.prefixes }}
+      - {{ $prefix }}
+    {{- end }}
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.serviceName }}-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-{{ .Values.serviceName }}@kubernetescrd # <middleware-namespace>-<middleware-name>@kubernetescrd
+spec:
+  rules:
+  {{- range $host := .Values.hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: {{ join "," $.Values.prefixes }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.serviceName }}
+                port:
+                  number: {{ $.Values.port | default 80 }}
+  {{- end }}

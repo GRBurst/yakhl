@@ -1,0 +1,11 @@
+serviceName: "default"
+namespace: "default"
+
+hosts:
+  - localhost
+
+prefixes:
+  - /nginx
+  - /webserver
+
+port: 80
