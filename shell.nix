@@ -2,6 +2,8 @@
 with pkgs;
 mkShell {
   buildInputs = [
+    k3d
+
     minikube
     k3s
 
