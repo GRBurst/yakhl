@@ -23,6 +23,12 @@ Using k3d to run k3s in docker, see https://github.com/k3d-io/k3d?tab=readme-ov-
 
 Check out what you can do via `k3d help` or check the docs @ [k3d.io](https://k3d.io)
 
+Create Cluster with config:
+```bash
+k3d cluster create --config cluster.yml
+```
+
+
 Example Workflow: Create a new cluster and use it with `kubectl`
 
 1. `k3d cluster create CLUSTER_NAME` to create a new single-node cluster (= 1 container running k3s + 1 loadbalancer container)
