@@ -1,0 +1,14 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: pluto
+volumes:
+  - volume: /media/kubernetes/data:/kubernetes
+    nodeFilters:
+      - server:0
+      - agent:*
+  - volume: /media/kubernetes/volumes:/var/lib/rancher/k3s/storage@all
+ports:
+  - port: 12345:80
+    nodeFilters:
+      - loadbalancer
