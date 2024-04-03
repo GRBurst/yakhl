@@ -1,12 +1,14 @@
 locals {
-  namespace         = "jellyfin"
-  jellyfin_data_pvc = "jellyfin-data-pvc"
-  media_storage     = "/media/jellyfin/library"
+  jellyfin = {
+    namespace     = "jellyfin"
+    data_pvc      = "jellyfin-data-pvc"
+    media_storage = "${local.defaults.root}/jellyfin/library"
+  }
 }
 
 resource "kubernetes_namespace" "jellyfin" {
   metadata {
-    name = local.namespace
+    name = local.jellyfin.namespace
   }
 }
 
@@ -37,7 +39,7 @@ resource "kubernetes_deployment" "jellyfin" {
 
       spec {
         container {
-          image = "lscr.io/linuxserver/jellyfin:latest"
+          image = "lscr.io/linuxserver/jellyfin:amd64-10.8.13"
           name  = "jellyfin"
           # env_from { # ENV File
           #   config_map_ref {
@@ -80,31 +82,35 @@ resource "kubernetes_deployment" "jellyfin" {
         volume {
           name = "data"
           persistent_volume_claim {
-            claim_name = local.jellyfin_data_pvc
+            claim_name = local.jellyfin.data_pvc
           }
         }
         volume {
           name = "movies"
           host_path {
-            path = "${local.media_storage}/movies"
+            path = "${local.jellyfin.media_storage}/movies"
             type = "Directory"
           }
         }
         volume {
           name = "shows"
           host_path {
-            path = "${local.media_storage}/shows"
+            path = "${local.jellyfin.media_storage}/shows"
             type = "Directory"
           }
         }
       }
     }
   }
+
+  depends_on = [
+    kubernetes_persistent_volume_claim.jellyfin_data
+  ]
 }
 
 resource "kubernetes_persistent_volume_claim" "jellyfin_data" {
   metadata {
-    name      = local.jellyfin_data_pvc
+    name      = local.jellyfin.data_pvc
     namespace = kubernetes_namespace.jellyfin.metadata.0.name
   }
   spec {
@@ -140,9 +146,9 @@ resource "kubernetes_service" "jellyfin_web" {
 
 resource "helm_release" "jellyfin_ingress" {
   name       = "jellyfin"
-  chart      = "./charts/ingress-services"
+  chart      = "${path.module}/charts/ingress-services"
   values = [
-    templatefile("${path.module}/ingress-values.yaml.tpl", {
+    templatefile("${path.module}/templates/ingress-values.yaml.tpl", {
       namespace = kubernetes_namespace.jellyfin.metadata.0.name
       service_name = kubernetes_service.jellyfin_web.metadata.0.name
       service_port = kubernetes_service.jellyfin_web.spec.0.port.0.port
@@ -150,6 +156,9 @@ resource "helm_release" "jellyfin_ingress" {
       strip_prefixes = ["/media", "/jellyfin"]
       hosts = ["localhost", "localhost.localdomain"]
     })
+  ]
+  depends_on = [
+    kubernetes_service.jellyfin_web
   ]
 }
 

@@ -77,9 +77,9 @@ resource "kubernetes_service" "nginx" {
 
 resource "helm_release" "nginx_ingress" {
   name       = "nginx"
-  chart      = "./charts/ingress-services"
+  chart      = "${path.module}/charts/ingress-services"
   values = [
-    templatefile("${path.module}/ingress-values.yaml.tpl", {
+    templatefile("${path.module}/templates/ingress-values.yaml.tpl", {
       namespace = element(kubernetes_namespace.nginx.metadata, 0).name
       service_name = element(kubernetes_service.nginx.metadata, 0).name
       service_port = kubernetes_service.nginx.spec.0.port.0.port
@@ -87,5 +87,8 @@ resource "helm_release" "nginx_ingress" {
       strip_prefixes = ["/nginx", "/webserver"]
       hosts = ["localhost", "localhost.localdomain"]
     })
+  ]
+  depends_on = [
+    kubernetes_service.nginx
   ]
 }
