@@ -7,7 +7,9 @@ volumes:
     nodeFilters:
       - server:0
       - agent:*
-  - volume: /media/kubernetes/volumes:/var/lib/rancher/k3s/storage@all
+  - volume: /media/kubernetes/pvc:/var/lib/rancher/k3s/storage
+    nodeFilters:
+      - all
 ports:
   - port: 12345:80
     nodeFilters:
