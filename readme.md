@@ -51,6 +51,21 @@ Right now, this will deploy:
 - nginx under "localhost:12345", "web.localhost:12345" and "web.localhost.localdomain:12345"
 - jellyfin under "media.localhost:12345" and "media.localhost.localdomain:12345"
 
+### Dashboard
+
+WIP with token access.
+
+
+Forward with:
+```bash
+kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+```
+
+Get the token with:
+```bash
+tofu output -json token | jq -r ".token"
+```
+
 ## Learnings
 
 - Don't depend on persistent volume claims in a deployment. Terraform waits for the creation of the claim, but kubernetes creates the claim on first request. Hence, the deployment has to claim it, before it is created.
