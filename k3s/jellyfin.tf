@@ -1,7 +1,7 @@
 locals {
   jellyfin = {
     namespace     = "jellyfin"
-    data_pvc      = "jellyfin-data-pvc"
+    config_pvc    = "jellyfin-config-pvc"
     media_storage = "${local.defaults.root}/jellyfin/library"
   }
 }
@@ -59,7 +59,7 @@ resource "kubernetes_deployment" "jellyfin" {
           #   container_port = 1900
           # }
           volume_mount {
-            name       = "data"
+            name       = "config"
             mount_path = "/config"
           }
           volume_mount {
@@ -80,9 +80,9 @@ resource "kubernetes_deployment" "jellyfin" {
           }
         }
         volume {
-          name = "data"
+          name = "config"
           persistent_volume_claim {
-            claim_name = local.jellyfin.data_pvc
+            claim_name = local.jellyfin.config_pvc
           }
         }
         volume {
@@ -103,21 +103,18 @@ resource "kubernetes_deployment" "jellyfin" {
     }
   }
 
-  depends_on = [
-    kubernetes_persistent_volume_claim.jellyfin_data
-  ]
 }
 
-resource "kubernetes_persistent_volume_claim" "jellyfin_data" {
+resource "kubernetes_persistent_volume_claim_v1" "jellyfin_config" {
   metadata {
-    name      = local.jellyfin.data_pvc
+    name      = local.jellyfin.config_pvc
     namespace = kubernetes_namespace.jellyfin.metadata.0.name
   }
   spec {
     access_modes = ["ReadWriteOnce"]
     resources {
       requests = {
-        storage = "15Gi"
+        storage = "1Gi"
       }
     }
     storage_class_name = "local-path"

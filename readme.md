@@ -16,7 +16,7 @@ It will be edge, cloud native and very modern.
 Using k3d to run k3s in docker, see https://github.com/k3d-io/k3d?tab=readme-ov-file#usage.
 
 - K3s offers a more production ready environment than minikube
-- Plain K3s has several limitations when using as a plain service in your OS, e.g. it can be tedious to cleanup (there is a killall script, but that does not work on all OS, e.g. not possible to use in NixOS).
+- Plain K3s has several limitations when using as a plain service in your OS, e.g. it can be tedious to cleanup (there is a killall script, but that does not work on all OS, e.g. not possible to use in NixOS, see https://github.com/NixOS/nixpkgs/issues/98090).
 
 
 ## Usage
@@ -35,3 +35,10 @@ Example Workflow: Create a new cluster and use it with `kubectl`
 2. [Optional, included in cluster create] `k3d kubeconfig merge CLUSTER_NAME --kubeconfig-switch-context` to update your default kubeconfig and switch the current-context to the new one
 3. execute some commands like `kubectl get pods --all-namespaces`
 4. `k3d cluster delete CLUSTER_NAME` to delete the default cluster
+
+## Learnings
+
+- Don't depend on persistent volume claims in a deployment. Terraform waits for the creation of the claim, but kubernetes creates the claim on first request. Hence, the deployment has to claim it, before it is created.
+- Ingress rules are referenced by "<middleware-namespace>-<middleware-name>@kubernetescrd"
+
+
