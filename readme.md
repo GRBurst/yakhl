@@ -19,13 +19,15 @@ Using k3d to run k3s in docker, see https://github.com/k3d-io/k3d?tab=readme-ov-
 - Plain K3s has several limitations when using as a plain service in your OS, e.g. it can be tedious to cleanup (there is a killall script, but that does not work on all OS, e.g. not possible to use in NixOS, see https://github.com/NixOS/nixpkgs/issues/98090).
 
 
-## Usage
+## Setup
+
+### K3d
 
 Check out what you can do via `k3d help` or check the docs @ [k3d.io](https://k3d.io)
 
 Create Cluster with config:
 ```bash
-k3d cluster create --config cluster.yml
+k3d cluster create --config k3s/cluster.yml
 ```
 
 
@@ -35,6 +37,19 @@ Example Workflow: Create a new cluster and use it with `kubectl`
 2. [Optional, included in cluster create] `k3d kubeconfig merge CLUSTER_NAME --kubeconfig-switch-context` to update your default kubeconfig and switch the current-context to the new one
 3. execute some commands like `kubectl get pods --all-namespaces`
 4. `k3d cluster delete CLUSTER_NAME` to delete the default cluster
+
+### Services
+Currently the main services are deployed to k3s.
+After creating the cluster, `cd` into the `k3s` folder and run terraform (OpenTofu).
+
+```bash
+cd k3s
+tofu apply -auto-approve
+```
+
+Right now, this will deploy:
+- nginx under "localhost:12345", "web.localhost:12345" and "web.localhost.localdomain:12345"
+- jellyfin under "media.localhost:12345" and "media.localhost.localdomain:12345"
 
 ## Learnings
 

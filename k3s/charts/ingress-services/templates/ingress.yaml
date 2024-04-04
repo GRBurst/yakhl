@@ -23,6 +23,12 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-{{ .Values.serviceName }}@kubernetescrd # <middleware-namespace>-<middleware-name>@kubernetescrd
 spec:
+  tls:
+    - hosts:
+    {{- range $host := .Values.hosts }}
+      - {{ $host }}
+    {{- end }}
+
   rules:
   {{- range $host := .Values.hosts }}
     - host: {{ $host }}

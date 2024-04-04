@@ -11,6 +11,12 @@ volumes:
     nodeFilters:
       - all
 ports:
-  - port: 12345:80
+  - port: 12345:80 # does not redirect to https
+    nodeFilters:
+      - loadbalancer
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+  - port: 443:443
     nodeFilters:
       - loadbalancer
