@@ -52,19 +52,6 @@ resource "helm_release" "dashboard" {
   repository = "https://kubernetes.github.io/dashboard/"
   chart      = "kubernetes-dashboard"
   version    = "7.1.3"
-
-  # set {
-  #   name = "app.networkPolicy.enabled"
-  #   value = "true"
-  # }
-  # set {
-  #   name = "app.ingress.enabled"
-  #   value = "true"
-  # }
-  # set_list {
-  #   name = "app.ingress.hosts"
-  #   value = [ "dashboard.localhost", "localhost" ]
-  # }
 }
 
 output "token" {
