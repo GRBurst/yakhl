@@ -50,15 +50,15 @@ resource "kubernetes_deployment" "jellyfin" {
             name           = "web"
             container_port = 8096
           }
-          # port {
-          #   name           = "local-discovery"
-          #   container_port = 7359
-          # }
-          # port {
-          #   name           = "dlna"
-          #   container_port = 1900
-          # }
-          volume_mount {
+          port {
+            name           = "local-discovery"
+            container_port = 7359
+          }
+          port {
+            name           = "dlna"
+            container_port = 1900
+          }
+          volume_mount { # Jellyfin data storage location. This can grow very large, 50gb+ is likely for a large collection.
             name       = "config"
             mount_path = "/config"
           }
@@ -149,9 +149,9 @@ resource "helm_release" "jellyfin_ingress" {
       namespace = kubernetes_namespace.jellyfin.metadata.0.name
       service_name = kubernetes_service.jellyfin_web.metadata.0.name
       service_port = kubernetes_service.jellyfin_web.spec.0.port.0.port
-      prefixes = ["/media", "/jellyfin", "/web"]
+      prefixes = ["/media", "/jellyfin", "/web", "/media/socket", "/"]
       strip_prefixes = ["/media", "/jellyfin"]
-      hosts = ["localhost", "localhost.localdomain"]
+      hosts = ["media.localhost", "media.localhost.localdomain"]
     })
   ]
   depends_on = [
