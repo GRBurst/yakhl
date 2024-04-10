@@ -48,8 +48,10 @@ tofu apply -auto-approve
 ```
 
 Right now, this will deploy:
-- nginx under "localhost:12345", "web.localhost:12345" and "web.localhost.localdomain:12345"
-- jellyfin under "media.localhost:12345" and "media.localhost.localdomain:12345"
+- nginx under "https://localhost", "https://web.localhost" and "https://web.localhost.localdomain"
+- jellyfin under "https://media.localhost" and "https://media.localhost.localdomain"
+- nextcloud under "https://cloud.localhost"
+
 
 ### Dashboard
 
@@ -61,7 +63,7 @@ Forward with:
 kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
 ```
 
-Get the token with:
+Open at https://localhost:8443/ and input the token. You can query the token with:
 ```bash
 tofu output -json token | jq -r ".token"
 ```
@@ -69,6 +71,6 @@ tofu output -json token | jq -r ".token"
 ## Learnings
 
 - Don't depend on persistent volume claims in a deployment. Terraform waits for the creation of the claim, but kubernetes creates the claim on first request. Hence, the deployment has to claim it, before it is created.
-- Ingress rules are referenced by "<middleware-namespace>-<middleware-name>@kubernetescrd"
+- Ingress rules are referenced by `<middleware-namespace>-<middleware-name>@kubernetescrd`.
 
 
