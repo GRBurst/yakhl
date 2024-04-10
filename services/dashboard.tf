@@ -52,7 +52,40 @@ resource "helm_release" "dashboard" {
   repository = "https://kubernetes.github.io/dashboard/"
   chart      = "kubernetes-dashboard"
   version    = "7.1.3"
+  # set {
+  #   name = "app.security.networkPolicy.enabled"
+  #   value = true
+  # }
+  # set {
+  #   name = "app.ingress.enabled"
+  #   value = true
+  # }
+  # set_list {
+  #   name = "app.ingress.hosts"
+  #   value = [
+  #     "dashboard.localhost",
+  #     "dashboard.localhost.localdomain"
+  #   ]
+  # }
 }
+
+# resource "helm_release" "dashboard_ingress" {
+#   name       = "dashboard"
+#   chart      = "${path.module}/charts/ingress-services"
+#   values = [
+#     templatefile("${path.module}/templates/ingress-values.yaml.tpl", {
+#       namespace = kubernetes_namespace.dashboard.metadata.0.name
+#       service_name = "kubernetes-dashboard-kong-proxy"
+#       service_port = 443
+#       prefixes = ["/"]
+#       strip_prefixes = []
+#       hosts = ["dashboard.localhost", "dashboard.localhost.localdomain"]
+#     })
+#   ]
+#   depends_on = [
+#     helm_release.dashboard
+#   ]
+# }
 
 output "token" {
   value = kubernetes_secret.dashboard.data

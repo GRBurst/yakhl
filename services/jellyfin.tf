@@ -58,7 +58,7 @@ resource "kubernetes_deployment" "jellyfin" {
             name           = "dlna"
             container_port = 1900
           }
-          volume_mount { # Jellyfin data storage location. This can grow very large, 50gb+ is likely for a large collection.
+          volume_mount {
             name       = "config"
             mount_path = "/config"
           }
@@ -102,9 +102,9 @@ resource "kubernetes_deployment" "jellyfin" {
       }
     }
   }
-
 }
 
+# Jellyfin data storage location. This can grow very large, 50gb+ is likely for a large collection.
 resource "kubernetes_persistent_volume_claim_v1" "jellyfin_config" {
   metadata {
     name      = local.jellyfin.config_pvc

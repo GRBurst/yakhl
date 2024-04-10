@@ -9,10 +9,12 @@ metadata:
 spec:
   stripPrefix:
     forceSlash: false
-    prefixes: 
+    prefixes:
+    {{ if (.Values.stripPrefixes) }}
     {{- range $prefix := .Values.stripPrefixes }}
       - "{{ $prefix }}"
     {{- end }}
+    {{ end }}
 ---
 # Ingress
 apiVersion: networking.k8s.io/v1
@@ -21,6 +23,7 @@ metadata:
   name: {{ .Values.serviceName }}-ingress
   namespace: {{ .Values.namespace }}
   annotations:
+    # traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-{{ .Values.serviceName }}@kubernetescrd # <middleware-namespace>-<middleware-name>@kubernetescrd
 spec:
   tls:
@@ -34,6 +37,7 @@ spec:
     - host: {{ $host }}
       http:
         paths:
+        {{ if $.Values.prefixes }}
         {{- range $prefix := $.Values.prefixes }}
           - path: "{{ $prefix }}"
             pathType: Prefix
@@ -43,4 +47,13 @@ spec:
                 port:
                   number: {{ $.Values.port | default 80 }}
         {{- end }}
+        {{ else }}
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Values.serviceName }}
+                port:
+                  number: {{ $.Values.port | default 80 }}
+        {{ end }}
   {{- end }}
