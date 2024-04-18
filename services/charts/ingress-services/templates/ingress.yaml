@@ -7,10 +7,17 @@ metadata:
   name: {{ .Values.serviceName }}
   namespace: {{ .Values.namespace }}
 spec:
+  headers:
+    customFrameOptionsValue: "SAMEORIGIN"
+    browserXssFilter: true
+    stsIncludeSubdomains: true
+    stsSeconds: 15552000
+    stsPreload: true
+    forceSTSHeader: true
+  {{ if (.Values.stripPrefixes) }}
   stripPrefix:
     forceSlash: false
     prefixes:
-    {{ if (.Values.stripPrefixes) }}
     {{- range $prefix := .Values.stripPrefixes }}
       - "{{ $prefix }}"
     {{- end }}
@@ -22,9 +29,11 @@ kind: Ingress
 metadata:
   name: {{ .Values.serviceName }}-ingress
   namespace: {{ .Values.namespace }}
-  annotations:
-    # traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-{{ .Values.serviceName }}@kubernetescrd # <middleware-namespace>-<middleware-name>@kubernetescrd
+  annotations: # <middleware-namespace>-<middleware-name>@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-{{ .Values.serviceName }}@kubernetescrd{{if (.Values.additionalIngressMiddlewares) }},{{ join "," .Values.additionalIngressMiddlewares }}{{end}}
+    {{- range $annotation_key, $annotation  := .Values.additionalIngressAnnotations }}
+    {{ $annotation_key }}: {{ $annotation.value }}
+    {{- end }}
 spec:
   tls:
     - hosts:

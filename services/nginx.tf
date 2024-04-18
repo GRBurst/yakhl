@@ -57,19 +57,23 @@ resource "kubernetes_deployment" "nginx" {
 }
 
 resource "kubernetes_service" "nginx" {
-    metadata {
-        name = "nginx"
-        namespace = element(kubernetes_namespace.nginx.metadata, 0).name
+  metadata {
+    name = "nginx"
+    namespace = element(kubernetes_namespace.nginx.metadata, 0).name
+    annotations = {
+      "mesh.traefik.io/traffic-type" = "http"
+      "mesh.traefik.io/retry-attempts" = 2
     }
-    spec {
-        selector = {
-            app = element(element(element(kubernetes_deployment.nginx.spec, 0).template, 0).metadata, 0).labels.app
-        }
-        port {
-            port = 80
-            target_port = "http"
-        }
+  }
+  spec {
+    selector = {
+      app = element(element(element(kubernetes_deployment.nginx.spec, 0).template, 0).metadata, 0).labels.app
     }
+    port {
+      port = 80
+      target_port = "http"
+    }
+  }
   depends_on = [
     kubernetes_deployment.nginx
   ]
@@ -79,14 +83,12 @@ resource "helm_release" "nginx_ingress" {
   name       = "nginx"
   chart      = "${path.module}/charts/ingress-services"
   values = [
-    templatefile("${path.module}/templates/ingress-values.yaml.tpl", {
+    templatefile("${path.module}/templates/ingress-values.yaml.tpl", merge(local.defaults.ingress, {
       namespace = element(kubernetes_namespace.nginx.metadata, 0).name
       service_name = element(kubernetes_service.nginx.metadata, 0).name
       service_port = kubernetes_service.nginx.spec.0.port.0.port
-      prefixes = []
-      strip_prefixes = []
       hosts = ["localhost", "web.localhost", "web.localhost.localdomain"]
-    })
+    }))
   ]
   depends_on = [
     kubernetes_service.nginx

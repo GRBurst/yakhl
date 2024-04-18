@@ -77,8 +77,6 @@ resource "helm_release" "dashboard" {
 #       namespace = kubernetes_namespace.dashboard.metadata.0.name
 #       service_name = "kubernetes-dashboard-kong-proxy"
 #       service_port = 443
-#       prefixes = ["/"]
-#       strip_prefixes = []
 #       hosts = ["dashboard.localhost", "dashboard.localhost.localdomain"]
 #     })
 #   ]

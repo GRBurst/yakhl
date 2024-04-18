@@ -2,8 +2,8 @@ locals {
   syncthing = {
     name           = "syncthing"
     config_pvc     = "syncthing-config-pvc"
-    data           = "${local.defaults.root}/syncthing/data"
-    backup         = "${local.defaults.root}/syncthing/backup"
+    data           = "${local.defaults.storage.root}/syncthing/data"
+    backup         = "${local.defaults.storage.root}/syncthing/backup"
     config_volume  = "config"
   }
 }

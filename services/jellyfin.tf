@@ -1,23 +1,40 @@
 locals {
   jellyfin = {
-    namespace     = "jellyfin"
+    name          = "jellyfin"
     config_pvc    = "jellyfin-config-pvc"
-    media_storage = "${local.defaults.root}/jellyfin/library"
+    media_storage = "${local.defaults.storage.root}/jellyfin/library"
   }
 }
 
 resource "kubernetes_namespace" "jellyfin" {
   metadata {
-    name = local.jellyfin.namespace
+    name = local.jellyfin.name
   }
 }
 
-resource "kubernetes_deployment" "jellyfin" {
+# Jellyfin data storage location. This can grow very large, 50gb+ is likely for a large collection.
+resource "kubernetes_persistent_volume_claim_v1" "jellyfin_config" {
   metadata {
-    name      = "jellyfin"
+    name      = local.jellyfin.config_pvc
+    namespace = kubernetes_namespace.jellyfin.metadata.0.name
+  }
+  spec {
+    access_modes = ["ReadWriteOnce"]
+    resources {
+      requests = {
+        storage = "1Gi"
+      }
+    }
+    storage_class_name = "local-path"
+  }
+}
+
+resource "kubernetes_deployment_v1" "jellyfin" {
+  metadata {
+    name      = local.jellyfin.name
     namespace = kubernetes_namespace.jellyfin.metadata.0.name
     labels = {
-      app = "jellyfin"
+      app = local.jellyfin.name
     }
   }
 
@@ -26,14 +43,14 @@ resource "kubernetes_deployment" "jellyfin" {
 
     selector {
       match_labels = {
-        app = "jellyfin"
+        app = local.jellyfin.name
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "jellyfin"
+          app = local.jellyfin.name
         }
       }
 
@@ -70,14 +87,14 @@ resource "kubernetes_deployment" "jellyfin" {
             name       = "shows"
             mount_path = "/data/shows"
           }
-          resources {
-            requests = {
-              cpu = 2
-            }
-            limits = {
-              cpu = 4
-            }
-          }
+          # resources {
+          #   requests = {
+          #     cpu = 2
+          #   }
+          #   limits = {
+          #     cpu = 4
+          #   }
+          # }
         }
         volume {
           name = "config"
@@ -104,31 +121,18 @@ resource "kubernetes_deployment" "jellyfin" {
   }
 }
 
-# Jellyfin data storage location. This can grow very large, 50gb+ is likely for a large collection.
-resource "kubernetes_persistent_volume_claim_v1" "jellyfin_config" {
-  metadata {
-    name      = local.jellyfin.config_pvc
-    namespace = kubernetes_namespace.jellyfin.metadata.0.name
-  }
-  spec {
-    access_modes = ["ReadWriteOnce"]
-    resources {
-      requests = {
-        storage = "1Gi"
-      }
-    }
-    storage_class_name = "local-path"
-  }
-}
-
 resource "kubernetes_service" "jellyfin_web" {
   metadata {
     name      = "jellyfin-web"
     namespace = element(kubernetes_namespace.jellyfin.metadata, 0).name
+    annotations = {
+      "mesh.traefik.io/traffic-type" = "http",
+      "mesh.traefik.io/retry-attempts" = 2
+    }
   }
   spec {
     selector = {
-      app = element(element(element(kubernetes_deployment.jellyfin.spec, 0).template, 0).metadata, 0).labels.app
+      app = element(element(element(kubernetes_deployment_v1.jellyfin.spec, 0).template, 0).metadata, 0).labels.app
     }
     port {
       name        = "web"
@@ -137,22 +141,22 @@ resource "kubernetes_service" "jellyfin_web" {
     }
   }
   depends_on = [
-    kubernetes_deployment.jellyfin
+    kubernetes_deployment_v1.jellyfin
   ]
 }
 
 resource "helm_release" "jellyfin_ingress" {
-  name       = "jellyfin"
+  name       = local.jellyfin.name
   chart      = "${path.module}/charts/ingress-services"
   values = [
-    templatefile("${path.module}/templates/ingress-values.yaml.tpl", {
+    templatefile("${path.module}/templates/ingress-values.yaml.tpl", merge(local.defaults.ingress, {
       namespace = kubernetes_namespace.jellyfin.metadata.0.name
       service_name = kubernetes_service.jellyfin_web.metadata.0.name
       service_port = kubernetes_service.jellyfin_web.spec.0.port.0.port
       prefixes = ["/media", "/jellyfin", "/web", "/media/socket", "/"]
       strip_prefixes = ["/media", "/jellyfin"]
       hosts = ["media.localhost", "media.localhost.localdomain"]
-    })
+    }))
   ]
   depends_on = [
     kubernetes_service.jellyfin_web
