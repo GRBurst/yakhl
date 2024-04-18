@@ -126,11 +126,21 @@ resource "kubernetes_deployment_v1" "nextcloud" {
           }
           env {
             name = "NEXTCLOUD_ADMIN_USER"
-            value = kubernetes_secret_v1.nextcloud_admin_user.data.username
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret_v1.nextcloud_admin_user.metadata.0.name
+                key = "username"
+              }
+            }
           }
           env {
             name = "NEXTCLOUD_ADMIN_PASSWORD"
-            value = kubernetes_secret_v1.nextcloud_admin_user.data.password
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret_v1.nextcloud_admin_user.metadata.0.name
+                key = "password"
+              }
+            }
           }
           env {
             name = "NEXTCLOUD_TRUSTED_DOMAINS"
