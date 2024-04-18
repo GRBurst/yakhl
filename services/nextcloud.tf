@@ -125,6 +125,10 @@ resource "kubernetes_deployment_v1" "nextcloud" {
             value = "nc_"
           }
           env {
+            name = "NEXTCLOUD_TRUSTED_DOMAINS"
+            value = "cloud.localhost"
+          }
+          env {
             name = "NEXTCLOUD_ADMIN_USER"
             value_from {
               secret_key_ref {
@@ -142,41 +146,15 @@ resource "kubernetes_deployment_v1" "nextcloud" {
               }
             }
           }
-          env {
-            name = "NEXTCLOUD_TRUSTED_DOMAINS"
-            value = "cloud.localhost"
-          }
-          env {
-            name = "NEXTCLOUD_DATA_DIR"
-            value = "/data"
-          }
           volume_mount {
             name       = "config"
             mount_path = "/config"
           }
           volume_mount {
             name       = "data"
-            mount_path = "/data"
+            mount_path = "/var/www/html/data"
           }
-          # resources {
-          #   requests = {
-          #     cpu = 2
-          #   }
-          #   limits = {
-          #     cpu = 4
-          #   }
-          # }
         }
-        # volume {
-        #   name = "php-config"
-        #   config_map {
-        #     name = kubernetes_config_map_v1.nextcloud_php_config.metadata.0.name
-        #     items = {
-        #       key = "bla.conf"
-        #       path = "pla.conf"
-        #     }
-        #   }
-        # }
         volume {
           name = "config"
           persistent_volume_claim {
@@ -218,13 +196,16 @@ resource "kubernetes_service" "nextcloud" {
   ]
 }
 
+# This can only be applied when the namespace is created, because 
+# there is no valid OpenAPI schema for this resource
+# https://github.com/hashicorp/terraform-provider-kubernetes/issues/1692
 resource "kubernetes_manifest" "nextcloud_proxy_middleware" {
  manifest = {
     apiVersion = "traefik.containo.us/v1alpha1"
     kind       = "Middleware"
     metadata = {
       name = "nextcloud-proxy"
-      namespace = element(kubernetes_namespace.nextcloud.metadata, 0).name
+      namespace = kubernetes_namespace.nextcloud.metadata.0.name
     }
     spec = {
       redirectRegex = {
@@ -234,6 +215,9 @@ resource "kubernetes_manifest" "nextcloud_proxy_middleware" {
       }
     }
   }
+  depends_on = [
+    kubernetes_namespace.nextcloud
+  ]
 }
 
 resource "helm_release" "nextcloud_ingress" {
