@@ -9,7 +9,7 @@ locals {
       root = "/kubernetes"
     }
     ingress = {
-      prefixes = [ "/" ]
+      prefixes = ["/"]
       strip_prefixes = [ ]
       additional_ingress_annotations = [ ]
       additional_ingress_middlewares = [ ]

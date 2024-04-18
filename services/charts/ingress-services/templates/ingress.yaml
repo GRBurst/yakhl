@@ -19,9 +19,9 @@ spec:
     forceSlash: false
     prefixes:
     {{- range $prefix := .Values.stripPrefixes }}
-      - "{{ $prefix }}"
+      - {{ $prefix | quote }}
     {{- end }}
-    {{ end }}
+  {{ end }}
 ---
 # Ingress
 apiVersion: networking.k8s.io/v1

@@ -58,11 +58,6 @@ resource "kubernetes_deployment_v1" "jellyfin" {
         container {
           image = "lscr.io/linuxserver/jellyfin:amd64-10.8.13"
           name  = "jellyfin"
-          # env_from { # ENV File
-          #   config_map_ref {
-          #     name = kubernetes_config_map.jellyfin_env.metadata.0.name
-          #   }
-          # }
           port {
             name           = "web"
             container_port = 8096
@@ -74,6 +69,10 @@ resource "kubernetes_deployment_v1" "jellyfin" {
           port {
             name           = "dlna"
             container_port = 1900
+          }
+          env {
+            name = "JELLYFIN_PublishedServerUrl"
+            value = "https://media.localhost"
           }
           volume_mount {
             name       = "config"
@@ -87,14 +86,6 @@ resource "kubernetes_deployment_v1" "jellyfin" {
             name       = "shows"
             mount_path = "/data/shows"
           }
-          # resources {
-          #   requests = {
-          #     cpu = 2
-          #   }
-          #   limits = {
-          #     cpu = 4
-          #   }
-          # }
         }
         volume {
           name = "config"
