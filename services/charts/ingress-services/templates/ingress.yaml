@@ -1,11 +1,24 @@
 ---
-# Middleware
-# Strip given prefixes
+# Middleware: Strip given prefixes
 apiVersion: traefik.containo.us/v1alpha1 # traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: {{ .Values.serviceName }}
-  namespace: {{ .Values.namespace }}
+  name: "{{ .Values.serviceName }}-prefixes"
+  namespace: "{{ .Values.namespace }}"
+spec:
+  stripPrefix:
+    forceSlash: false
+    prefixes:
+      {{- range $prefix := .Values.stripPrefixes }}
+      - {{ $prefix | quote }}
+      {{- end }}
+---
+# Middleware: Add security headers
+apiVersion: traefik.containo.us/v1alpha1 # traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: "{{ .Values.serviceName }}-headers"
+  namespace: "{{ .Values.namespace }}"
 spec:
   headers:
     customFrameOptionsValue: "SAMEORIGIN"
@@ -14,55 +27,61 @@ spec:
     stsSeconds: 15552000
     stsPreload: true
     forceSTSHeader: true
-  {{ if (.Values.stripPrefixes) }}
-  stripPrefix:
-    forceSlash: false
-    prefixes:
-    {{- range $prefix := .Values.stripPrefixes }}
-      - {{ $prefix | quote }}
-    {{- end }}
-  {{ end }}
+    contentTypeNosniff: true
+    customResponseHeaders: "X-Robots-Tag:noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: "{{ .Values.serviceName }}-chain"
+  namespace: "{{ .Values.namespace }}"
+spec:
+  chain:
+    middlewares:
+      - name: "{{ .Values.serviceName }}-headers"
+      {{- if (.Values.stripPrefixes) }}
+      - name: "{{ .Values.serviceName }}-prefixes"
+      {{- end }}
 ---
 # Ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.serviceName }}-ingress
-  namespace: {{ .Values.namespace }}
+  name: "{{ .Values.serviceName }}-ingress"
+  namespace: "{{ .Values.namespace }}"
   annotations: # <middleware-namespace>-<middleware-name>@kubernetescrd
-    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-{{ .Values.serviceName }}@kubernetescrd{{if (.Values.additionalIngressMiddlewares) }},{{ join "," .Values.additionalIngressMiddlewares }}{{end}}
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ .Values.namespace }}-{{ .Values.serviceName }}-chain@kubernetescrd{{- if (.Values.additionalIngressMiddlewares) }},{{- join "," .Values.additionalIngressMiddlewares }}{{- end}}"
     {{- range $annotation_key, $annotation  := .Values.additionalIngressAnnotations }}
     {{ $annotation_key }}: {{ $annotation.value }}
     {{- end }}
 spec:
   tls:
     - hosts:
-    {{- range $host := .Values.hosts }}
+      {{- range $host := .Values.hosts }}
       - {{ $host }}
-    {{- end }}
-
+      {{- end }}
   rules:
-  {{- range $host := .Values.hosts }}
+    {{- range $host := .Values.hosts }}
     - host: {{ $host }}
       http:
         paths:
-        {{ if $.Values.prefixes }}
+        {{- if $.Values.prefixes }}
         {{- range $prefix := $.Values.prefixes }}
-          - path: "{{ $prefix }}"
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ $.Values.serviceName }}
-                port:
-                  number: {{ $.Values.port | default 80 }}
+        - path: "{{ $prefix }}"
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $.Values.serviceName }}
+              port:
+                number: {{ $.Values.port | default 80 }}
         {{- end }}
-        {{ else }}
-          - path: "/"
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ $.Values.serviceName }}
-                port:
-                  number: {{ $.Values.port | default 80 }}
-        {{ end }}
-  {{- end }}
+        {{- else }}
+        - path: "/"
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $.Values.serviceName }}
+              port:
+                number: {{ $.Values.port | default 80 }}
+        {{- end }}
+    {{- end }}
