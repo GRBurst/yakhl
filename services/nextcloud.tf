@@ -118,7 +118,7 @@ resource "kubernetes_deployment_v1" "nextcloud" {
           }
           env {
             name = "TRUSTED_PROXIES"
-            value = "10.43.255.230 172.20.0.3" # hardcoded, need to get from cluster or setup traefik service manually
+            value = data.kubernetes_service.k3s_traefik.spec[0].cluster_ip
           }
           env {
             name = "NEXTCLOUD_TABLE_PREFIX"
