@@ -17,3 +17,6 @@ ports:
   - port: 443:443
     nodeFilters:
       - loadbalancer
+  - port: 25575:25575/udp
+    nodeFilters:
+      - loadbalancer

@@ -1,6 +1,4 @@
 locals {
-  # kube_config = "/etc/rancher/k3s/k3s.yaml" 
-  # kube_config = "~/.config/k3d/kubeconfig-pluto.yaml"
   kube_config = "~/.kube/config"
   context = "k3d-pluto"
 }
@@ -15,18 +13,6 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.12.1"
     }
-    kustomization = {
-      source  = "kbst/kustomization"
-      version = "~> 0.9.5"
-    }
-    keycloak = {
-      source = "mrparkers/keycloak"
-      version = "~> 4.0.0"
-    }
-    random = {
-      source = "hashicorp/random"
-      version = "~> 3.6.1"
-    }
   }
 }
 
@@ -40,9 +26,6 @@ provider "helm" {
     config_context = local.context
     config_path = pathexpand(local.kube_config)
   }
-  # experiments {
-  #   manifest = true
-  # }
   # registry {
   #   url = "oci://localhost:5000"
   #   username = "username"
@@ -50,14 +33,3 @@ provider "helm" {
   # }
 
 }
-
-provider "kustomization" {
-  kubeconfig_path    = pathexpand(local.kube_config)
-
-  default_tags {
-    tags = {
-      environment = "dev"
-      server      = "pluto"
-    }
-  }
-} 
