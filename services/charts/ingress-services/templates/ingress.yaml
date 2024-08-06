@@ -28,7 +28,8 @@ spec:
     stsPreload: true
     forceSTSHeader: true
     contentTypeNosniff: true
-    customResponseHeaders: "X-Robots-Tag:noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
+    customResponseHeaders: 
+      X-Robots-Tag: "noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
