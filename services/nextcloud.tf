@@ -118,7 +118,11 @@ resource "kubernetes_deployment_v1" "nextcloud" {
           }
           env {
             name = "TRUSTED_PROXIES"
-            value = data.kubernetes_service.k3s_traefik.spec[0].cluster_ip
+            value = data.kubernetes_service.k3s_traefik.spec.0.cluster_ip
+            # value = join(" ", [
+            #   data.kubernetes_service.k3s_traefik.spec.0.cluster_ip,
+            #   data.kubernetes_service.k3s_traefik.status.0.load_balancer.0.ingress.0.ip
+            # ])
           }
           env {
             name = "NEXTCLOUD_TABLE_PREFIX"
