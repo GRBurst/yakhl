@@ -92,9 +92,9 @@ resource "kubernetes_deployment_v1" "nextcloud" {
 
       spec {
         container {
-          # image = "lscr.io/linuxserver/nextcloud:amd64-28.0.4"
           # image = "nextcloud/all-in-one:20240404_082330-latest"
-          image = "nextcloud:28-apache"
+          # image = "nextcloud:29-apache"
+          image = "lscr.io/linuxserver/nextcloud:amd64-29.0.4"
           name  = "nextcloud"
           port {
             name           = "http"
@@ -152,7 +152,8 @@ resource "kubernetes_deployment_v1" "nextcloud" {
           }
           volume_mount {
             name       = "data"
-            mount_path = "/var/www/html/data"
+            # mount_path = "/var/www/html/data" # for official nextcloud docker image
+            mount_path = "/data" # for linuxserver docker image
           }
         }
         volume {
